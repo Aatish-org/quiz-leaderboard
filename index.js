@@ -9,6 +9,7 @@ const runQuizChallenge = async () => {
   console.log("Starting the Quiz Leaderboard data aggregation process.");
   console.log("----------------------------------------------------");
 
+  // --- Phase 1: Polling API for event data ---
   console.log("Phase 1: Polling API for event data...");
   const allEvents = [];
   for (let i = 0; i < 10; i++) {
@@ -27,9 +28,9 @@ const runQuizChallenge = async () => {
     }
   }
   console.log("\nPhase 1 Complete: Data polling finished.");
-  console.log(`Total events collected: ${allEvents.length}.`);
   console.log("----------------------------------------------------");
 
+  // --- Phase 2: Deduplication and Score Aggregation ---
   console.log("\nPhase 2: Processing data and calculating scores...");
   const leaderboardScores = new Map();
   const processedEntries = new Set();
@@ -43,25 +44,43 @@ const runQuizChallenge = async () => {
     }
   }
   console.log("Phase 2 Complete: Score aggregation finished.");
-  console.log(`Unique entries processed: ${processedEntries.size}.`);
   console.log("----------------------------------------------------");
 
+  // --- Phase 3: Formatting and Finalizing Leaderboard ---
   console.log("\nPhase 3: Formatting and Finalizing Leaderboard...");
-
   let finalLeaderboard = [];
   for (const [participant, totalScore] of leaderboardScores.entries()) {
     finalLeaderboard.push({ participant, totalScore });
   }
-
   finalLeaderboard.sort((a, b) => b.totalScore - a.totalScore);
-
   const totalScoreAllUsers = finalLeaderboard.reduce((sum, entry) => sum + entry.totalScore, 0);
-
   console.log("Phase 3 Complete: Leaderboard finalized.");
   console.log(`Total combined score for all users: ${totalScoreAllUsers}`);
-  console.log("Final Sorted Leaderboard:");
+  console.log("Final Leaderboard to be submitted:");
   console.table(finalLeaderboard);
   console.log("----------------------------------------------------");
+
+  // --- Final Phase: Submitting the Result ---
+  console.log("\nFinal Phase: Submitting the result to the validator...");
+
+  const submissionPayload = {
+    regNo: REG_NO,
+    leaderboard: finalLeaderboard,
+  };
+
+  try {
+    const submissionUrl = `${BASE_URL}/quiz/submit`;
+    const response = await axios.post(submissionUrl, submissionPayload);
+
+    console.log("Submission successful!");
+    console.log("Server Response:");
+    console.log(response.data);
+
+  } catch (error) {
+    console.error("An error occurred during submission:", error.response ? error.response.data : error.message);
+  }
+  console.log("----------------------------------------------------");
+  console.log("\nChallenge complete!");
 };
 
 runQuizChallenge();

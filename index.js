@@ -18,15 +18,11 @@ const runQuizChallenge = async () => {
       const response = await axios.get(url);
       if (response.data && Array.isArray(response.data.events)) {
         allEvents.push(...response.data.events);
-        console.log(`  -> Success: Retrieved ${response.data.events.length} events.`);
-      } else {
-        console.log(`  -> Notice: Poll ${i + 1} returned no events or has an unexpected format.`);
       }
     } catch (error) {
       console.error(`  -> Error during poll ${i + 1}: ${error.message}`);
     }
     if (i < 9) {
-      console.log("  Pausing for 5 seconds as per API requirements...");
       await sleep(5000);
     }
   }
@@ -35,28 +31,36 @@ const runQuizChallenge = async () => {
   console.log("----------------------------------------------------");
 
   console.log("\nPhase 2: Processing data and calculating scores...");
-
   const leaderboardScores = new Map();
   const processedEntries = new Set();
-
   for (const event of allEvents) {
     const { roundId, participant, score } = event;
     const uniqueKey = `${roundId}-${participant}`;
-
     if (!processedEntries.has(uniqueKey)) {
       processedEntries.add(uniqueKey);
       const currentScore = leaderboardScores.get(participant) || 0;
       leaderboardScores.set(participant, currentScore + score);
     }
   }
-
   console.log("Phase 2 Complete: Score aggregation finished.");
   console.log(`Unique entries processed: ${processedEntries.size}.`);
-  console.log("Aggregated scores:");
+  console.log("----------------------------------------------------");
 
+  console.log("\nPhase 3: Formatting and Finalizing Leaderboard...");
+
+  let finalLeaderboard = [];
   for (const [participant, totalScore] of leaderboardScores.entries()) {
-      console.log(`  - ${participant}: ${totalScore} points`);
+    finalLeaderboard.push({ participant, totalScore });
   }
+
+  finalLeaderboard.sort((a, b) => b.totalScore - a.totalScore);
+
+  const totalScoreAllUsers = finalLeaderboard.reduce((sum, entry) => sum + entry.totalScore, 0);
+
+  console.log("Phase 3 Complete: Leaderboard finalized.");
+  console.log(`Total combined score for all users: ${totalScoreAllUsers}`);
+  console.log("Final Sorted Leaderboard:");
+  console.table(finalLeaderboard);
   console.log("----------------------------------------------------");
 };
 
